@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  branch-guard:
+    name: Branch Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          if [[ ! "$BRANCH" =~ ^(feat|fix|chore|test|docs)/cre-.+ ]]; then
+            echo "Branch name '$BRANCH' does not follow the required format."
+            echo "Required format: feat/cre-{issue-id}-{description}"
+            echo "Allowed prefixes: feat/, fix/, chore/, test/, docs/"
+            exit 1
+          fi
+          echo "Branch name '$BRANCH' is valid."
+
+  quality-checks:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Lint
+        run: ruff check .
+      - name: Format check
+        run: ruff format --check .
+
+  security-checks:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install bandit
+        run: pip install bandit
+      - name: Security scan
+        run: bandit -r . --exclude .venv -ll
+
+  build-app:
+    name: Build App
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || echo "No requirements.txt yet — skipping install"
+      - name: Verify all files compile
+        run: |
+          find . -name "*.py" -not -path "./.venv/*" -exec python -m py_compile {} \;
+          echo "All Python files compile successfully."

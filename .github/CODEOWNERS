@@ -1,0 +1,12 @@
+# Code Owners — cre-deal-agent
+# These owners are automatically added as reviewers on PRs touching these paths.
+# Requires "Require review from Code Owners" enabled in branch protection settings.
+
+# Repo owner reviews all CI, docs, and contract files
+.github/                @vic-aibuilder
+docs/                   @vic-aibuilder
+AGENTS.md               @vic-aibuilder
+ROADMAP.md              @vic-aibuilder
+
+# Data contract files — any change requires owner review
+docs/PRD.md             @vic-aibuilder
