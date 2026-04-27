@@ -6,21 +6,21 @@ Manual settings applied by the repo owner (@vic-aibuilder) in the GitHub UI afte
 
 ## Branch Protection — `main`
 
-**Settings → Branches → Add ruleset (or classic protection rule) for `main`**
+**Settings → Rules → Rulesets → New branch ruleset**
 
-- [ ] Require a pull request before merging
-  - [ ] Required approvals: **1**
-  - [ ] Dismiss stale pull request approvals when new commits are pushed
-- [ ] Require status checks to pass before merging
-  - [ ] Require branches to be up to date before merging
-  - [ ] Required status checks (job names from `.github/workflows/ci.yml`):
+- [x] Require a pull request before merging
+  - [x] Required approvals: **1**
+  - [x] Dismiss stale pull request approvals when new commits are pushed
+- [x] Require status checks to pass before merging
+  - [x] Require branches to be up to date before merging
+  - [x] Required status checks (job names from `.github/workflows/ci.yml`):
     - `Branch Guard`
     - `Quality Checks`
     - `Security Checks`
     - `Build App`
-- [ ] Require review from Code Owners (enforces `.github/CODEOWNERS`)
-- [ ] Do not allow bypassing the above settings
-- [ ] Restrict who can push to matching branches — no direct pushes to `main`
+- [x] Require review from Code Owners (enforces `.github/CODEOWNERS`)
+- [x] Block force pushes
+- [x] Ruleset name: `protect-main` · Enforcement status: `Active` · targeting `main`
 
 ---
 
@@ -28,12 +28,12 @@ Manual settings applied by the repo owner (@vic-aibuilder) in the GitHub UI afte
 
 **Settings → General**
 
-- [ ] Default branch: `main`
-- [ ] Merge button options:
-  - [ ] Allow squash merging — enabled (recommended for clean history)
-  - [ ] Allow merge commits — enabled
-  - [ ] Allow rebase merging — your preference
-- [ ] Automatically delete head branches after merge — enabled
+- [x] Default branch: `main`
+- [x] Merge button options:
+  - [x] Allow squash merging — enabled
+  - [x] Allow merge commits — enabled
+  - [x] Allow rebase merging — enabled
+- [x] Automatically delete head branches after merge — enabled
 
 ---
 
