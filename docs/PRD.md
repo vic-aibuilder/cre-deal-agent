@@ -131,10 +131,10 @@ Each fetcher returns a **list** of these dicts. Joel expects a list. Not a dict 
 
 ### v1.0 — ships Wednesday week 1
 
-- Terminal only — no frontend
 - OpenRouter free model
-- Human checkpoint: prints to terminal, waits for `yes` / `no`
-- Output: structured dict printed to terminal
+- Full core loop: input → fetch → analyze → checkpoint → output
+- Human checkpoint: agent pauses and asks before finalizing
+- Working demo the whole team can run in three minutes
 
 ### v2.0 — ships end of week 2
 
