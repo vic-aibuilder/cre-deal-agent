@@ -1,31 +1,16 @@
 import sys
 
 from dotenv import load_dotenv
-from fetchers import fred
+from fetchers import census, fred
 
 load_dotenv()
 
-# Integration day — uncomment these and delete the three stub functions below:
-# from fetchers import census, tavily
+# Integration day — uncomment these and delete the two stub functions below:
+# from fetchers import tavily
 # from ai import analyzer
 
 
 # ── Stubs ─────────────────────────────────────────────────────────────────────
-
-
-def _stub_census_fetch(submarket: str) -> list[dict]:
-    return [
-        {
-            "name": "Phoenix population growth",
-            "value": "+3.2% YoY (stub)",
-            "source": "Census Bureau (stub)",
-        },
-        {
-            "name": "Phoenix industrial permits",
-            "value": "14 new permits, Maricopa County (stub)",
-            "source": "Census Bureau (stub)",
-        },
-    ]
 
 
 def _stub_tavily_fetch(submarket: str, asset_type: str) -> list[dict]:
@@ -147,7 +132,7 @@ def main() -> None:
     print("\nFetching market signals...")
 
     fred_signals = fred.fetch(submarket)
-    census_signals = _stub_census_fetch(submarket)  # swap: census.fetch(submarket)
+    census_signals = census.fetch(submarket)
     tavily_signals = _stub_tavily_fetch(
         submarket, asset_type
     )  # swap: tavily.fetch(submarket, asset_type)
