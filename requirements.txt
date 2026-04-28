@@ -1,0 +1,10 @@
+# Runtime
+requests>=2.31.0
+python-dotenv>=1.0.0
+tavily-python>=0.3.0
+litellm>=1.0.0
+anthropic>=0.40.0
+
+# Dev
+ruff>=0.4.0
+bandit>=1.7.0
