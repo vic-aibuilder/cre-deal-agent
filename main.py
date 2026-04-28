@@ -12,17 +12,34 @@ load_dotenv()
 
 # ── Stubs ─────────────────────────────────────────────────────────────────────
 
+
 def _stub_census_fetch(submarket: str) -> list[dict]:
     return [
-        {"name": "Phoenix population growth", "value": "+3.2% YoY (stub)", "source": "Census Bureau (stub)"},
-        {"name": "Phoenix industrial permits", "value": "14 new permits, Maricopa County (stub)", "source": "Census Bureau (stub)"},
+        {
+            "name": "Phoenix population growth",
+            "value": "+3.2% YoY (stub)",
+            "source": "Census Bureau (stub)",
+        },
+        {
+            "name": "Phoenix industrial permits",
+            "value": "14 new permits, Maricopa County (stub)",
+            "source": "Census Bureau (stub)",
+        },
     ]
 
 
 def _stub_tavily_fetch(submarket: str, asset_type: str) -> list[dict]:
     return [
-        {"name": "Amazon logistics rightsizing", "value": "AMZN flagged warehouse footprint reduction in Q3 earnings (stub)", "source": "Tavily (stub)"},
-        {"name": "Phoenix industrial vacancy rising", "value": "6.2% vs 4.1% a year ago (stub)", "source": "Tavily (stub)"},
+        {
+            "name": "Amazon logistics rightsizing",
+            "value": "AMZN flagged warehouse footprint reduction in Q3 earnings (stub)",
+            "source": "Tavily (stub)",
+        },
+        {
+            "name": "Phoenix industrial vacancy rising",
+            "value": "6.2% vs 4.1% a year ago (stub)",
+            "source": "Tavily (stub)",
+        },
     ]
 
 
@@ -37,6 +54,7 @@ def _stub_analyze(deal_context: dict, signals: list[dict]) -> dict:
 
 
 # ── Deal input ────────────────────────────────────────────────────────────────
+
 
 def get_deal_input() -> dict:
     print("\n" + "═" * 60)
@@ -69,6 +87,7 @@ def get_deal_input() -> dict:
 
 # ── Checkpoint ────────────────────────────────────────────────────────────────
 
+
 def run_checkpoint(brief: dict) -> bool:
     print("\n" + "─" * 60)
     print("  CHECKPOINT — DEAL BRIEF PREVIEW")
@@ -89,10 +108,13 @@ def run_checkpoint(brief: dict) -> bool:
 
 # ── Final output ──────────────────────────────────────────────────────────────
 
+
 def print_brief(brief: dict, deal_context: dict) -> None:
     print("\n" + "═" * 60)
     print("  CRE DEAL MONITOR — FINAL BRIEF")
-    print(f"  {deal_context.get('asset_type')} · {deal_context.get('location')} · ${deal_context.get('price', 0):,.0f}")
+    print(
+        f"  {deal_context.get('asset_type')} · {deal_context.get('location')} · ${deal_context.get('price', 0):,.0f}"
+    )
     print("═" * 60)
     print(f"\n  POSTURE:        {brief['posture'].upper()}")
     print(f"  RECOMMENDATION: {brief['recommendation'].upper()}")
@@ -115,6 +137,7 @@ def print_brief(brief: dict, deal_context: dict) -> None:
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     deal_context = get_deal_input()
 
@@ -124,14 +147,18 @@ def main() -> None:
     print("\nFetching market signals...")
 
     fred_signals = fred.fetch(submarket)
-    census_signals = _stub_census_fetch(submarket)              # swap: census.fetch(submarket)
-    tavily_signals = _stub_tavily_fetch(submarket, asset_type)  # swap: tavily.fetch(submarket, asset_type)
+    census_signals = _stub_census_fetch(submarket)  # swap: census.fetch(submarket)
+    tavily_signals = _stub_tavily_fetch(
+        submarket, asset_type
+    )  # swap: tavily.fetch(submarket, asset_type)
 
     all_signals = [*fred_signals, *census_signals, *tavily_signals]
     print(f"  {len(all_signals)} signals collected.")
 
     print("Analyzing signals...")
-    brief = _stub_analyze(deal_context, all_signals)            # swap: analyzer.analyze(deal_context, all_signals)
+    brief = _stub_analyze(
+        deal_context, all_signals
+    )  # swap: analyzer.analyze(deal_context, all_signals)
 
     approved = run_checkpoint(brief)
 
