@@ -156,7 +156,7 @@ Each fetcher returns a **list** of these dicts. Joel expects a list. Not a dict 
 
 - [x] **§6** — Confirm all FRED series IDs (Manny + team)
 - [x] **§7.1** — Agree on exact `name` strings for each signal (all fetcher owners + Joel)
-- [ ] **§7.2** — Confirm `signal_breakdown` in DealBrief is the same list shape as §7.1 (Joel + Victor)
+- [x] **§7.2** — Confirm `signal_breakdown` in DealBrief is the same list shape as §7.1 (Joel + Victor) — **Confirmed. Same shape: `{"name": str, "value": str, "source": str}`**
 - [x] What happens if a FRED series returns no data for the requested date range? — **Skip that signal and continue. Return `{"name": <name>, "value": "unavailable", "source": "FRED (unavailable)"}` for any missing series.**
 - [x] What happens if Tavily returns zero results? — **Skip news signals and continue. Return an empty list.**
 - [x] Does the human checkpoint accept only `yes` / `no` or any truthy input? — **`yes` / `no` only. Any other input re-prompts.**
