@@ -66,18 +66,14 @@ Step 8  If approved, main.py prints final structured output
 
 ## §6 FRED series IDs
 
-**TEAM: confirm these before Manny writes a single line of code.**
-
 | Series ID | Metric | Rationale | Status |
 |---|---|---|---|
-| <!-- TEAM: confirm --> | 30-yr fixed mortgage rate | Directly impacts acquisition financing cost | Pending |
-| <!-- TEAM: confirm --> | Federal funds rate | Baseline rate environment signal | Pending |
-| <!-- TEAM: confirm --> | 10-yr Treasury yield | Cap rate benchmark | Pending |
-| <!-- TEAM: confirm --> | Regional unemployment rate | Tenant health proxy | Pending |
-| <!-- TEAM: confirm --> | Construction spending | New supply signal | Pending |
-| <!-- TEAM: confirm --> | Industrial production index | Demand-side signal for industrial assets | Pending |
-
-Once confirmed, replace each `<!-- TEAM: confirm -->` with the actual series ID (e.g. `MORTGAGE30US`).
+| `MORTGAGE30US` | 30-yr fixed mortgage rate | Directly impacts acquisition financing cost | Confirmed |
+| `FEDFUNDS` | Federal funds rate | Baseline rate environment signal | Confirmed |
+| `DGS10` | 10-yr Treasury yield | Cap rate benchmark | Confirmed |
+| `AZUR` | Arizona unemployment rate | Tenant health proxy (Phoenix metro proxy — Manny: verify if a tighter Phoenix MSA series exists) | Confirmed |
+| `TTLCONS` | Total construction spending | New supply signal | Confirmed |
+| `INDPRO` | Industrial production index | Demand-side signal for industrial assets | Confirmed |
 
 ---
 
@@ -107,7 +103,19 @@ Each fetcher returns a **list** of these dicts. Joel expects a list. Not a dict 
 ]
 ```
 
-**TEAM: agree on exact `name` strings before writing code — Joel's prompt references them by name.**
+**Agreed `name` strings — use these exactly. No variations.**
+
+| Owner | File | Signal name | Source value |
+|---|---|---|---|
+| Manny | fred.py | `"30-yr mortgage rate"` | `"FRED"` |
+| Manny | fred.py | `"federal funds rate"` | `"FRED"` |
+| Manny | fred.py | `"10-yr Treasury yield"` | `"FRED"` |
+| Manny | fred.py | `"Phoenix unemployment rate"` | `"FRED"` |
+| Manny | fred.py | `"construction spending"` | `"FRED"` |
+| Manny | fred.py | `"industrial production index"` | `"FRED"` |
+| Manny | census.py | `"Phoenix population growth"` | `"Census Bureau"` |
+| Manny | census.py | `"Phoenix industrial permits"` | `"Census Bureau"` |
+| Michael | tavily.py | article headline (full, as returned) | publication name (e.g. `"CoStar"`, `"Bloomberg"`) |
 
 ### 7.2 DealBrief format — what Joel returns to Victor
 
@@ -146,8 +154,8 @@ Each fetcher returns a **list** of these dicts. Joel expects a list. Not a dict 
 
 ## §9 Open questions — resolve before writing code
 
-- [ ] **§6** — Confirm all FRED series IDs (Manny + team)
-- [ ] **§7.1** — Agree on exact `name` strings for each signal (all fetcher owners + Joel)
+- [x] **§6** — Confirm all FRED series IDs (Manny + team)
+- [x] **§7.1** — Agree on exact `name` strings for each signal (all fetcher owners + Joel)
 - [ ] **§7.2** — Confirm `signal_breakdown` in DealBrief is the same list shape as §7.1 (Joel + Victor)
 - [ ] What happens if a FRED series returns no data for the requested date range? (Manny to propose, team to agree)
 - [ ] What happens if Tavily returns zero results? (Michael to propose, team to agree)
