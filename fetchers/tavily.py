@@ -2,25 +2,15 @@
 
 import json
 import os
-import ssl
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
 
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 TAVILY_ENDPOINT = "https://api.tavily.com/search"
-
-
-def _ssl_context() -> ssl.SSLContext:
-    try:
-        import certifi
-
-        return ssl.create_default_context(cafile=certifi.where())
-    except Exception:
-        return ssl.create_default_context()
 
 
 def _one_line(text: str, max_len: int) -> str:
@@ -54,10 +44,7 @@ def fetch(submarket: str, asset_type: str) -> list[dict[str, str]]:
             }
         ]
 
-    query = (
-        f"{submarket} {asset_type} commercial real estate market "
-        "broker report news"
-    )
+    query = f"{submarket} {asset_type} commercial real estate market broker report news"
 
     payload = {
         "api_key": TAVILY_API_KEY,
@@ -66,16 +53,10 @@ def fetch(submarket: str, asset_type: str) -> list[dict[str, str]]:
         "max_results": 5,
     }
 
-    request = Request(
-        TAVILY_ENDPOINT,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-
     try:
-        with urlopen(request, timeout=20, context=_ssl_context()) as response:
-            data = json.loads(response.read().decode("utf-8"))
+        response = requests.post(TAVILY_ENDPOINT, json=payload, timeout=20)
+        response.raise_for_status()
+        data = response.json()
     except Exception as exc:
         return [
             {
@@ -104,3 +85,10 @@ def fetch(submarket: str, asset_type: str) -> list[dict[str, str]]:
         )
 
     return signals
+
+
+if __name__ == "__main__":
+    sample_submarket = "Phoenix-Mesa-Chandler"
+    sample_asset_type = "industrial"
+    sample_signals = fetch(sample_submarket, sample_asset_type)
+    print(json.dumps(sample_signals, indent=2))
