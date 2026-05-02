@@ -113,7 +113,9 @@ def print_brief(brief: dict, deal_context: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--demo", action="store_true", help="Run with preset demo scenario")
+    parser.add_argument(
+        "--demo", action="store_true", help="Run with preset demo scenario"
+    )
     args = parser.parse_args()
 
     deal_context = get_deal_input(demo=args.demo)
@@ -131,7 +133,9 @@ def main() -> None:
     print(f"  {len(all_signals)} signals collected.")
 
     print("Analyzing signals...")
-    brief = analyzer.analyze_deal(deal_context, fred_signals, census_signals, tavily_signals)
+    brief = analyzer.analyze_deal(
+        deal_context, fred_signals, census_signals, tavily_signals
+    )
 
     approved = run_checkpoint(brief)
 
