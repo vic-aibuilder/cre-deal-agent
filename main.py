@@ -1,50 +1,38 @@
+import argparse
 import sys
 
 from dotenv import load_dotenv
-from fetchers import census, fred
+from fetchers import census, fred, tavily
+from ai import analyzer
 
 load_dotenv()
 
-# Integration day — uncomment these and delete the two stub functions below:
-# from fetchers import tavily
-# from ai import analyzer
-
-
-# ── Stubs ─────────────────────────────────────────────────────────────────────
-
-
-def _stub_tavily_fetch(submarket: str, asset_type: str) -> list[dict]:
-    return [
-        {
-            "name": "Amazon logistics rightsizing",
-            "value": "AMZN flagged warehouse footprint reduction in Q3 earnings (stub)",
-            "source": "Tavily (stub)",
-        },
-        {
-            "name": "Phoenix industrial vacancy rising",
-            "value": "6.2% vs 4.1% a year ago (stub)",
-            "source": "Tavily (stub)",
-        },
-    ]
-
-
-def _stub_analyze(deal_context: dict, signals: list[dict]) -> dict:
-    return {
-        "posture": "balanced",
-        "recommendation": "renegotiate",
-        "signal_breakdown": signals[:3],
-        "next_move": "Request a 30-day rate lock extension from Wells Fargo before Thursday's deadline given the 28bps move in the 10-yr Treasury.",
-        "watch_list": "10-yr Treasury yield — a move above 5.0% would compress cap rates and push this deal below the 1.25x DSCR floor.",
-    }
+DEMO_DEAL = {
+    "asset_type": "Industrial, 412k sqft",
+    "location": "Phoenix-Mesa-Chandler",
+    "price": 95_000_000.0,
+    "cap_rate": "5.8%",
+    "tenants": "Amazon · 65% of NOI",
+    "lender": "Wells Fargo",
+    "dscr_constraint": "1.25",
+}
 
 
 # ── Deal input ────────────────────────────────────────────────────────────────
 
 
-def get_deal_input() -> dict:
+def get_deal_input(demo: bool = False) -> dict:
     print("\n" + "═" * 60)
     print("  CRE DEAL MONITOR")
     print("═" * 60 + "\n")
+
+    if demo:
+        print("  [DEMO MODE] Using preset deal scenario.\n")
+        for key, val in DEMO_DEAL.items():
+            label = key.replace("_", " ").title()
+            print(f"  {label}: {val}")
+        print()
+        return DEMO_DEAL
 
     asset_type = input("Asset type (e.g. Industrial, 412k sqft): ").strip()
     location = input("Submarket (e.g. Phoenix-Mesa-Chandler): ").strip()
@@ -124,7 +112,11 @@ def print_brief(brief: dict, deal_context: dict) -> None:
 
 
 def main() -> None:
-    deal_context = get_deal_input()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--demo", action="store_true", help="Run with preset demo scenario")
+    args = parser.parse_args()
+
+    deal_context = get_deal_input(demo=args.demo)
 
     submarket = deal_context["location"]
     asset_type = deal_context["asset_type"]
@@ -133,17 +125,13 @@ def main() -> None:
 
     fred_signals = fred.fetch(submarket)
     census_signals = census.fetch(submarket)
-    tavily_signals = _stub_tavily_fetch(
-        submarket, asset_type
-    )  # swap: tavily.fetch(submarket, asset_type)
+    tavily_signals = tavily.fetch(submarket, asset_type)
 
     all_signals = [*fred_signals, *census_signals, *tavily_signals]
     print(f"  {len(all_signals)} signals collected.")
 
     print("Analyzing signals...")
-    brief = _stub_analyze(
-        deal_context, all_signals
-    )  # swap: analyzer.analyze(deal_context, all_signals)
+    brief = analyzer.analyze_deal(deal_context, fred_signals, census_signals, tavily_signals)
 
     approved = run_checkpoint(brief)
 
