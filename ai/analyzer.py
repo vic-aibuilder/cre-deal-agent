@@ -249,10 +249,10 @@ def analyze_deal(
         deal_context, fred_signals, census_signals, tavily_signals
     )
 
-    # ── v1: OpenRouter auto router via LiteLLM ───────────────────────────
-    # v2 swap: change model to "openrouter/anthropic/claude-opus-4-5"
-    # No other changes needed — same interface.
-    model_id = "openrouter/openrouter/auto"
+    # ── v2: Claude Sonnet 4 via OpenRouter ─────────────────────────────
+    # v1 was: "openrouter/openrouter/auto" (free-tier, unreliable)
+    # v2 uses Anthropic's Claude for precise JSON and deeper reasoning.
+    model_id = "openrouter/anthropic/claude-sonnet-4"
 
     # ── Retry loop: handles rate limits, content filters, empty responses ─
     max_retries = 3
