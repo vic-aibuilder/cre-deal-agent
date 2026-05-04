@@ -1,5 +1,4 @@
-"""
-ai/analyzer.py — CRE Deal Monitor Agent
+"""ai/analyzer.py — CRE Deal Monitor Agent
 Owner: Joel (Person 4) — Claude Layer
 Roadmap ref: Agent tab (Week 1 Plan) · How to Connect tab (handoff chain)
 
@@ -7,9 +6,10 @@ Joel owns this file entirely.
 - Receives raw signal data from Manny (fred.py, census.py) and Michael (tavily.py)
 - Receives the structured prompt from Ibrahima (Person 1)
 - Sends everything to Claude via OpenRouter (v1) or Anthropic directly (v2)
-- Returns a structured Python dict with exactly 5 keys back to Victor's main.py
+- Returns a structured Python dict back to Victor's main.py
 
-Output contract (Victor depends on this — do not change keys):
+Output contract (Victor depends on this):
+  Required keys (v1+v2 — never remove):
   {
     "posture":         str,   # "buyer's market" | "balanced" | "seller's market"
     "recommendation":  str,   # "hold" | "accelerate" | "renegotiate" | "exit"
@@ -17,9 +17,16 @@ Output contract (Victor depends on this — do not change keys):
     "next_move":       str,   # one specific action to take this week
     "watch_list":      str,   # one metric to monitor over the next 30 days
   }
+  Optional keys (v2 — present when model provides them):
+  {
+    "confidence":      float, # 0.0–1.0 — how confident the recommendation is
+    "rationale":       str,   # why this recommendation over alternatives
+  }
 
-v1: OpenRouter free model via LiteLLM (strands-agents)
+v1: OpenRouter free model via LiteLLM
 v2: Swap model_id to "anthropic/claude-opus-4-5" — no other changes needed
+
+Terminal formatting moved to ui/terminal.py in v2.
 """
 
 import json
@@ -30,6 +37,7 @@ from typing import Any
 from pathlib import Path
 
 from dotenv import load_dotenv
+from ui.terminal import format_brief_for_terminal  # noqa: F401  # re-export for backward compat
 
 # Resolve .env relative to this file's parent (project root: cre-deal-agent/)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -39,7 +47,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DEAL BRIEF TYPE
-# Victor reads exactly these five keys. Never add or remove.
+# Victor reads the 5 required keys. v2 adds 2 optional keys.
 # ─────────────────────────────────────────────────────────────────────────────
 
 DealBrief = dict[str, Any]
@@ -65,7 +73,9 @@ missing keys:
     "recommendation": "hold" | "accelerate" | "renegotiate" | "exit",
     "signal_breakdown": [{"name": str, "value": str, "source": str}],
     "next_move": str,
-    "watch_list": str
+    "watch_list": str,
+    "confidence": float between 0.0 and 1.0,
+    "rationale": str — one sentence explaining why this recommendation over alternatives
 }
 
 Return only valid JSON matching this schema. No explanation. No extra keys.
@@ -137,6 +147,7 @@ REQUIRED_KEYS = {
     "next_move",
     "watch_list",
 }
+OPTIONAL_KEYS = {"confidence", "rationale"}
 VALID_POSTURES = {"buyer's market", "balanced", "seller's market"}
 VALID_RECOMMENDATIONS = {"hold", "accelerate", "renegotiate", "exit"}
 
@@ -145,6 +156,7 @@ def _parse_brief(raw_text: str) -> DealBrief:
     """
     Parses and validates Claude's JSON response.
     Raises ValueError if the response is malformed or missing required keys.
+    v2 optional keys (confidence, rationale) are kept if present but not required.
     The caller (analyze_deal) handles the retry on ValueError.
     """
     # Guard against empty responses from free-tier models
@@ -180,6 +192,18 @@ def _parse_brief(raw_text: str) -> DealBrief:
     if not isinstance(data["signal_breakdown"], list):
         raise ValueError("signal_breakdown must be a list.")
 
+    # v2: validate confidence range if present
+    if "confidence" in data:
+        try:
+            conf = float(data["confidence"])
+            data["confidence"] = max(0.0, min(1.0, conf))  # clamp to [0, 1]
+        except (TypeError, ValueError):
+            data.pop("confidence", None)  # drop malformed confidence
+
+    # Strip any extra keys the model hallucinated beyond required + optional
+    allowed_keys = REQUIRED_KEYS | OPTIONAL_KEYS
+    data = {k: v for k, v in data.items() if k in allowed_keys}
+
     return data
 
 
@@ -204,8 +228,9 @@ def analyze_deal(
     Receives from: Manny (fred_signals, census_signals), Michael (tavily_signals)
     Prompt by: Ibrahima (SYSTEM_PROMPT above)
 
-    Returns a dict with exactly 5 keys:
-        posture, recommendation, signal_breakdown, next_move, watch_list
+    Returns a dict with 5 required keys + up to 2 optional v2 keys:
+        Required: posture, recommendation, signal_breakdown, next_move, watch_list
+        Optional: confidence (float 0-1), rationale (str)
 
     Raises:
         RuntimeError — if Claude fails to return a valid brief after retry
@@ -248,7 +273,8 @@ def analyze_deal(
                         "content": (
                             "Your previous response could not be parsed as JSON. "
                             "Return ONLY a valid JSON object with exactly these keys: "
-                            "posture, recommendation, signal_breakdown, next_move, watch_list. "
+                            "posture, recommendation, signal_breakdown, next_move, "
+                            "watch_list, confidence, rationale. "
                             "No markdown. No explanation. JSON only.\n\n"
                             f"Original request:\n{user_prompt}"
                         ),
@@ -302,70 +328,11 @@ def analyze_deal(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FORMATTER — format_brief_for_terminal()
-# Victor calls this to print the deal brief to the terminal.
-# Joel owns the formatting; Gary/Pape own it if there's a frontend.
+# FORMATTER — moved to ui/terminal.py in v2
+# Kept as a re-export for backward compatibility with main.py imports.
 # ─────────────────────────────────────────────────────────────────────────────
 
-
-def format_brief_for_terminal(brief: DealBrief, deal_context: dict) -> str:
-    """
-    Formats the structured DealBrief dict into a readable terminal output.
-    Victor calls this after the human checkpoint is approved.
-    """
-    posture_icons = {
-        "buyer's market": "🟢",
-        "balanced": "🟡",
-        "seller's market": "🔴",
-    }
-    rec_icons = {
-        "hold": "⏸ ",
-        "accelerate": "▶️ ",
-        "renegotiate": "🔄",
-        "exit": "🚨",
-    }
-
-    posture_icon = posture_icons.get(brief["posture"], "⚪")
-    rec_icon = rec_icons.get(brief["recommendation"], "  ")
-
-    lines = [
-        "",
-        "═" * 64,
-        "  CRE DEAL MONITOR — ANALYST BRIEF",
-        f"  {deal_context.get('asset_type', 'Deal')} · "
-        f"{deal_context.get('location', 'Unknown')} · "
-        f"${deal_context.get('price', 0):,.0f}",
-        "═" * 64,
-        "",
-        f"  MARKET POSTURE     {posture_icon}  {brief['posture'].upper()}",
-        f"  RECOMMENDATION     {rec_icon}  {brief['recommendation'].upper()}",
-        "",
-        "─" * 64,
-        "  SIGNAL BREAKDOWN",
-        "─" * 64,
-    ]
-
-    for sig in brief.get("signal_breakdown", []):
-        lines.append(f"  ▸ {sig.get('name', '')} ({sig.get('source', '')})")
-        lines.append(f"    Value: {sig.get('value', '')}")
-        lines.append("")
-
-    lines += [
-        "─" * 64,
-        "  NEXT MOVE",
-        "─" * 64,
-        f"  {brief.get('next_move', '')}",
-        "",
-        "─" * 64,
-        "  30-DAY WATCH LIST",
-        "─" * 64,
-        f"  {brief.get('watch_list', '')}",
-        "",
-        "═" * 64,
-        "",
-    ]
-
-    return "\n".join(lines)
+# Re-exported at top of file: from ui.terminal import format_brief_for_terminal
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -439,10 +406,19 @@ if __name__ == "__main__":
 
     try:
         brief = analyze_deal(TEST_DEAL, MOCK_FRED, MOCK_CENSUS, MOCK_TAVILY)
-        print(format_brief_for_terminal(brief, TEST_DEAL))
+
+        from ui.terminal import format_brief_for_terminal as fmt
+
+        print(fmt(brief, TEST_DEAL))
 
         print("\n[analyzer] Raw dict (what Victor receives):")
         print(json.dumps(brief, indent=2))
+
+        # v2: show confidence and rationale if present
+        if "confidence" in brief:
+            print(f"\n[analyzer] Confidence: {brief['confidence']:.0%}")
+        if "rationale" in brief:
+            print(f"[analyzer] Rationale: {brief['rationale']}")
 
     except Exception as e:
         print(f"\n[analyzer] Test failed: {e}")

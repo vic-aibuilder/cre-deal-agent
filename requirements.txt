@@ -8,3 +8,4 @@ anthropic>=0.40.0
 # Dev
 ruff>=0.4.0
 bandit>=1.7.0
+pytest>=8.0.0
