@@ -49,39 +49,35 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DEAL BRIEF TYPE
-# Victor reads the 5 required keys. v2 adds 2 optional keys.
+# Victor reads the 5 required keys. Build 2 adds optional keys for
+# downstream agents (bid, negotiation, LOI).
 # ─────────────────────────────────────────────────────────────────────────────
 
 DealBrief = dict[str, Any]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SYSTEM PROMPT (authored by Ibrahima, wired by Joel)
-# Ibrahima writes and tests the prompt. Joel does NOT edit the logic —
-# only the formatting instructions if the JSON parsing breaks.
+# Build 2: prompt loaded from ai/prompts/analysis.txt so Ibrahima can
+# iterate without touching Python code. Falls back to inline if missing.
 # ─────────────────────────────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """
-You are a senior commercial real estate data analyst specializing in
-industrial assets. Your job is to analyze live market signals for an active
-deal and return a structured JSON brief the deal team can act on immediately.
-You must return only valid JSON. No explanation. No prose. No markdown.
-Only the JSON object.
+_PROMPT_FILE = Path(__file__).resolve().parent / "prompts" / "analysis.txt"
 
-The JSON you return must match this exact schema with no extra keys and no
-missing keys:
 
-{
-    "posture": "buyer's market" | "balanced" | "seller's market",
-    "recommendation": "hold" | "accelerate" | "renegotiate" | "exit",
-    "signal_breakdown": [{"name": str, "value": str, "source": str}],
-    "next_move": str,
-    "watch_list": str,
-    "confidence": float between 0.0 and 1.0,
-    "rationale": str — one sentence explaining why this recommendation over alternatives
-}
+def _load_system_prompt() -> str:
+    """Load system prompt from file, fall back to inline if missing."""
+    if _PROMPT_FILE.exists():
+        return _PROMPT_FILE.read_text().strip()
+    # Inline fallback — keeps the agent running if the file is deleted
+    return (
+        "You are a senior commercial real estate data analyst. "
+        "Return only valid JSON with keys: posture, recommendation, "
+        "signal_breakdown, next_move, watch_list, confidence, rationale. "
+        "No explanation. No prose. No markdown. Only JSON."
+    )
 
-Return only valid JSON matching this schema. No explanation. No extra keys.
-""".strip()
+
+SYSTEM_PROMPT = _load_system_prompt()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -149,9 +145,21 @@ REQUIRED_KEYS = {
     "next_move",
     "watch_list",
 }
-OPTIONAL_KEYS = {"confidence", "rationale"}
+OPTIONAL_KEYS = {
+    # Build 1 v2
+    "confidence",
+    "rationale",
+    # Build 2 V3 — bid and negotiation fields for downstream agents
+    "bid_floor_usd",
+    "bid_ceiling_usd",
+    "negotiation_posture",
+    "loi_urgency",
+    "key_negotiation_levers",
+}
 VALID_POSTURES = {"buyer's market", "balanced", "seller's market"}
 VALID_RECOMMENDATIONS = {"hold", "accelerate", "renegotiate", "exit"}
+VALID_NEGOTIATION_POSTURES = {"aggressive", "measured", "cautious"}
+VALID_LOI_URGENCIES = {"submit_within_24h", "submit_within_72h", "hold"}
 
 
 def _parse_brief(raw_text: str) -> DealBrief:
@@ -202,6 +210,29 @@ def _parse_brief(raw_text: str) -> DealBrief:
         except (TypeError, ValueError):
             data.pop("confidence", None)  # drop malformed confidence
 
+    # Build 2 V3: validate bid floor/ceiling as integers if present
+    for bid_key in ("bid_floor_usd", "bid_ceiling_usd"):
+        if bid_key in data:
+            try:
+                data[bid_key] = int(float(data[bid_key]))
+            except (TypeError, ValueError):
+                data.pop(bid_key, None)
+
+    # Build 2 V3: validate negotiation_posture enum if present
+    if "negotiation_posture" in data:
+        if data["negotiation_posture"] not in VALID_NEGOTIATION_POSTURES:
+            data.pop("negotiation_posture", None)
+
+    # Build 2 V3: validate loi_urgency enum if present
+    if "loi_urgency" in data:
+        if data["loi_urgency"] not in VALID_LOI_URGENCIES:
+            data.pop("loi_urgency", None)
+
+    # Build 2 V3: validate key_negotiation_levers is a list if present
+    if "key_negotiation_levers" in data:
+        if not isinstance(data["key_negotiation_levers"], list):
+            data.pop("key_negotiation_levers", None)
+
     # Strip any extra keys the model hallucinated beyond required + optional
     allowed_keys = REQUIRED_KEYS | OPTIONAL_KEYS
     data = {k: v for k, v in data.items() if k in allowed_keys}
@@ -251,10 +282,10 @@ def analyze_deal(
         deal_context, fred_signals, census_signals, tavily_signals
     )
 
-    # ── v2: Claude Sonnet 4 via OpenRouter ─────────────────────────────
-    # v1 was: "openrouter/openrouter/auto" (free-tier, unreliable)
-    # v2 uses Anthropic's Claude for precise JSON and deeper reasoning.
-    model_id = "openrouter/anthropic/claude-sonnet-4"
+    # ── Build 2: Claude Sonnet 4 via Anthropic direct ────────────────────
+    # LiteLLM reads ANTHROPIC_API_KEY from env automatically.
+    # No OpenRouter billing — direct Anthropic API.
+    model_id = "anthropic/claude-sonnet-4-20250514"
 
     # ── Retry loop: handles rate limits, content filters, empty responses ─
     max_retries = 3

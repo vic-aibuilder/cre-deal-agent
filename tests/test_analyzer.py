@@ -12,6 +12,8 @@ from ai.analyzer import (
     OPTIONAL_KEYS,
     VALID_POSTURES,
     VALID_RECOMMENDATIONS,
+    VALID_NEGOTIATION_POSTURES,
+    VALID_LOI_URGENCIES,
 )
 
 
@@ -40,6 +42,17 @@ def _valid_brief_v2() -> dict:
     brief["rationale"] = (
         "Rising vacancy and Amazon rightsizing offset strong employment."
     )
+    return brief
+
+
+def _valid_brief_v3() -> dict:
+    """Returns a valid V3 DealBrief (5 required + 7 optional keys)."""
+    brief = _valid_brief_v2()
+    brief["bid_floor_usd"] = 88000000
+    brief["bid_ceiling_usd"] = 95000000
+    brief["negotiation_posture"] = "aggressive"
+    brief["loi_urgency"] = "submit_within_24h"
+    brief["key_negotiation_levers"] = ["due_diligence_period", "earnest_money"]
     return brief
 
 
@@ -99,6 +112,64 @@ class TestParseValidBrief:
         raw = "```json\n" + json.dumps(_valid_brief_v1()) + "\n```"
         result = _parse_brief(raw)
         assert set(result.keys()) == REQUIRED_KEYS
+
+
+class TestParseV3Brief:
+    """Tests that V3 bid/negotiation fields parse correctly."""
+
+    def test_v3_brief_parses_all_fields(self) -> None:
+        raw = json.dumps(_valid_brief_v3())
+        result = _parse_brief(raw)
+        assert "bid_floor_usd" in result
+        assert "bid_ceiling_usd" in result
+        assert "negotiation_posture" in result
+        assert "loi_urgency" in result
+        assert "key_negotiation_levers" in result
+
+    def test_bid_floor_coerced_to_int(self) -> None:
+        brief = _valid_brief_v3()
+        brief["bid_floor_usd"] = 88000000.75
+        result = _parse_brief(json.dumps(brief))
+        assert result["bid_floor_usd"] == 88000000
+        assert isinstance(result["bid_floor_usd"], int)
+
+    def test_malformed_bid_floor_dropped(self) -> None:
+        brief = _valid_brief_v3()
+        brief["bid_floor_usd"] = "not a number"
+        result = _parse_brief(json.dumps(brief))
+        assert "bid_floor_usd" not in result
+
+    def test_invalid_negotiation_posture_dropped(self) -> None:
+        brief = _valid_brief_v3()
+        brief["negotiation_posture"] = "yolo"
+        result = _parse_brief(json.dumps(brief))
+        assert "negotiation_posture" not in result
+
+    def test_invalid_loi_urgency_dropped(self) -> None:
+        brief = _valid_brief_v3()
+        brief["loi_urgency"] = "whenever"
+        result = _parse_brief(json.dumps(brief))
+        assert "loi_urgency" not in result
+
+    def test_non_list_levers_dropped(self) -> None:
+        brief = _valid_brief_v3()
+        brief["key_negotiation_levers"] = "should be a list"
+        result = _parse_brief(json.dumps(brief))
+        assert "key_negotiation_levers" not in result
+
+    def test_all_negotiation_postures_accepted(self) -> None:
+        for posture in VALID_NEGOTIATION_POSTURES:
+            brief = _valid_brief_v3()
+            brief["negotiation_posture"] = posture
+            result = _parse_brief(json.dumps(brief))
+            assert result["negotiation_posture"] == posture
+
+    def test_all_loi_urgencies_accepted(self) -> None:
+        for urgency in VALID_LOI_URGENCIES:
+            brief = _valid_brief_v3()
+            brief["loi_urgency"] = urgency
+            result = _parse_brief(json.dumps(brief))
+            assert result["loi_urgency"] == urgency
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -173,9 +244,17 @@ class TestContract:
         }
         assert REQUIRED_KEYS == expected
 
-    def test_optional_keys_are_v2(self) -> None:
-        expected = {"confidence", "rationale"}
-        assert OPTIONAL_KEYS == expected
+    def test_optional_keys_include_v3(self) -> None:
+        v3_keys = {
+            "confidence",
+            "rationale",
+            "bid_floor_usd",
+            "bid_ceiling_usd",
+            "negotiation_posture",
+            "loi_urgency",
+            "key_negotiation_levers",
+        }
+        assert OPTIONAL_KEYS == v3_keys
 
     def test_posture_enum_values(self) -> None:
         expected = {"buyer's market", "balanced", "seller's market"}
