@@ -29,6 +29,8 @@ v2: Swap model_id to "anthropic/claude-opus-4-5" — no other changes needed
 Terminal formatting moved to ui/terminal.py in v2.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import time
