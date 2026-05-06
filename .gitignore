@@ -4,3 +4,8 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+
+# Gmail OAuth credentials — NEVER commit these
+config/gmail_credentials.json
+config/gmail_token.json
+docs/client_secret_*.json
