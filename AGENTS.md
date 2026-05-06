@@ -46,6 +46,7 @@ Nobody touches another person's file without asking first.
 | `fetchers/fred.py` | Manny |
 | `fetchers/census.py` | Manny |
 | `fetchers/tavily.py` | Michael |
+| `agents/email_agent.py` | Michael |
 | `ai/analyzer.py` | Ibrahima (prompt) + Joel (API call) |
 | `.env.example` | Victor |
 | `docs/PRD.md` | Victor (updates require team sign-off) |

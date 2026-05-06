@@ -1,1 +1,1 @@
-# ai package — CRE Deal Monitor Agent
+# ai package - CRE Deal Monitor Agent

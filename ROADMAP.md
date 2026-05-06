@@ -95,12 +95,15 @@ submarket: str  # e.g. "Phoenix-Mesa-Chandler"
 
 ---
 
-## Michael — Search & News
+## Michael — Search, News & EmailAgent (V2)
 
-**File owned:** `fetchers/tavily.py`
+**Files owned:** `fetchers/tavily.py`, `agents/email_agent.py`
 
 **What you write:**
 - `tavily.fetch(submarket: str, asset_type: str) -> list[dict]` — pulls live brokerage reports and news
+- `send_broker_inquiry(...)` — sends first-touch broker inquiry email autonomously
+- `monitor_broker_inbox(...)` — monitors active Gmail deal threads and flags counters
+- `send_loi_cover_email(...)` — sends LOI cover email with LOI PDF attachment
 
 **Input:**
 ```python
@@ -116,9 +119,9 @@ asset_type: str  # e.g. "industrial"
 ]
 ```
 
-**Done looks like:** Function returns 3–5 news signals for the demo submarket. `source` is the publication name (e.g. `"CoStar News"`). Each `value` is a one-sentence summary of the article.
+**Done looks like:** Tavily returns focused results for the demo submarket, and EmailAgent sends/monitors broker communication autonomously (no human approval step before outbound send).
 
-**Riskiest part:** Tavily returning irrelevant results for niche submarkets. Fix: craft the search query to include `"commercial real estate"` + asset type + submarket in the string.
+**Riskiest part:** False positives in search and inbox scanning. Fix: keep query strings explicit (asset type + submarket) and restrict inbox polling to active thread IDs.
 
 **Checklist:**
 - [ ] Write `tavily.fetch()` with targeted search query
@@ -126,15 +129,19 @@ asset_type: str  # e.g. "industrial"
 - [ ] Handle zero results — return empty list, do not crash
 - [ ] Test against Phoenix-Mesa-Chandler industrial query
 - [ ] Confirm output matches PRD §7.1 signal shape exactly
+- [ ] Build `agents/email_agent.py` with `send_broker_inquiry()` and `monitor_broker_inbox()`
+- [ ] Add LOI send support with PDF attachment via `send_loi_cover_email()`
+- [ ] Validate Gmail auth + inbox access with a smoke test script
 
 ---
 
-## Joel — Claude Layer
+## Joel — Claude Layer & Sealer (V2)
 
-**File owned:** `ai/analyzer.py` (API call section — coordinate with Ibrahima)
+**Files owned:** `ai/analyzer.py` (API call section — coordinate with Ibrahima), `agents/sealer.py`
 
 **What you write:**
 - `analyze(deal_context: dict, signals: list) -> dict` — combines Ibrahima's prompt with the raw signals, sends to Claude, returns a clean DealBrief dict
+- `sealer` logic that generates LOI terms and hands LOI artifact to EmailAgent
 
 **Input:**
 ```python
@@ -153,7 +160,7 @@ signals      = [{"name": str, "value": str, "source": str}]
 }
 ```
 
-**Done looks like:** `analyze()` returns a valid DealBrief dict for the demo scenario. Claude's raw response is fully parsed — Victor never sees a raw string or a JSON parse error.
+**Done looks like:** `analyze()` returns valid DealBrief output with complete fields, and sealer produces LOI terms for EmailAgent handoff.
 
 **Riskiest part:** Claude returning valid JSON that doesn't match the DealBrief schema. Fix: validate the parsed dict against the five required keys before returning. Raise a clear error if any key is missing.
 
@@ -165,6 +172,7 @@ signals      = [{"name": str, "value": str, "source": str}]
 - [ ] Handle JSON parse error — raise `ValueError` with Claude's raw response in the message
 - [ ] Test against demo scenario with real signal data from Manny and Michael
 - [ ] Confirm return shape matches PRD §7.2 exactly
+- [ ] Build sealer output for LOI terms and pass output to EmailAgent handoff
 
 ---
 

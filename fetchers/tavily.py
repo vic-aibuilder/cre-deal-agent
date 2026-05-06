@@ -28,6 +28,15 @@ def _source_from_url(url: str) -> str:
     return host or "Tavily"
 
 
+def _build_queries(submarket: str, asset_type: str) -> list[str]:
+    # Every query variant intentionally includes both asset type and submarket.
+    return [
+        f"{submarket} {asset_type} commercial real estate broker report",
+        f"{submarket} {asset_type} commercial real estate lease comps vacancy",
+        f"{submarket} {asset_type} commercial real estate cap rates transactions",
+    ]
+
+
 def fetch(submarket: str, asset_type: str) -> list[dict[str, str]]:
     """
     Fetches live CRE news and report snippets from Tavily.
@@ -44,19 +53,21 @@ def fetch(submarket: str, asset_type: str) -> list[dict[str, str]]:
             }
         ]
 
-    query = f"{submarket} {asset_type} commercial real estate market broker report news"
+    query_variants = _build_queries(submarket, asset_type)
 
-    payload = {
-        "api_key": TAVILY_API_KEY,
-        "query": query,
-        "search_depth": "basic",
-        "max_results": 5,
-    }
-
+    all_results: list[dict] = []
     try:
-        response = requests.post(TAVILY_ENDPOINT, json=payload, timeout=20)
-        response.raise_for_status()
-        data = response.json()
+        for query in query_variants:
+            payload = {
+                "api_key": TAVILY_API_KEY,
+                "query": query,
+                "search_depth": "basic",
+                "max_results": 3,
+            }
+            response = requests.post(TAVILY_ENDPOINT, json=payload, timeout=20)
+            response.raise_for_status()
+            data = response.json()
+            all_results.extend(data.get("results", []))
     except Exception as exc:
         return [
             {
@@ -66,12 +77,21 @@ def fetch(submarket: str, asset_type: str) -> list[dict[str, str]]:
             }
         ]
 
-    results = data.get("results", [])
-    if not results:
+    if not all_results:
         return []
 
+    deduped_results: list[dict] = []
+    seen_urls: set[str] = set()
+    for item in all_results:
+        url = str(item.get("url") or "")
+        if url and url in seen_urls:
+            continue
+        if url:
+            seen_urls.add(url)
+        deduped_results.append(item)
+
     signals: list[dict[str, str]] = []
-    for item in results:
+    for item in deduped_results[:5]:
         title = str(item.get("title") or "Untitled CRE update")
         summary = str(item.get("content") or "No summary provided.")
         url = str(item.get("url") or "")
