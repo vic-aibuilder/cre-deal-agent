@@ -106,12 +106,12 @@ def fetch(submarket: str) -> list[dict]:
     if not msa:
         return [
             {
-                "name": "Phoenix population growth",
+                "name": "Phoenix Population Growth",
                 "value": "unavailable",
                 "source": "Census Bureau (unavailable)",
             },
             {
-                "name": "Phoenix industrial permits",
+                "name": "Phoenix MSA Building Permits (proxy)",
                 "value": "unavailable",
                 "source": "Census Bureau (unavailable)",
             },
@@ -122,14 +122,18 @@ def fetch(submarket: str) -> list[dict]:
 
     return [
         {
-            "name": "Phoenix population growth",
+            "name": "Phoenix Population Growth",
             "value": growth if growth else "unavailable",
-            "source": "Census Bureau" if growth else "Census Bureau (unavailable)",
+            "source": "Census Bureau (MSA)"
+            if growth
+            else "Census Bureau (unavailable)",
         },
         {
-            "name": "Phoenix industrial permits",
+            "name": "Phoenix MSA Building Permits (proxy)",
             "value": permits if permits else "unavailable",
-            "source": "Census Bureau" if permits else "Census Bureau (unavailable)",
+            "source": "Census Bureau (proxy)"
+            if permits
+            else "Census Bureau (unavailable)",
         },
     ]
 
