@@ -188,6 +188,6 @@ Joel loads them at runtime — do not rename files without telling Joel.
 | Claude parse failure | Retry once with simplified prompt; `RuntimeError` on second failure |
 | Email agent failure | `RuntimeError` raised; Victor catches in `main.py`, shows error panel |
 | `finder.py` returns zero results | Empty list; dashboard shows "No competing offers found" |
-| Missing `OPENROUTER_API_KEY` | `EnvironmentError` raised before any API call |
+| Missing `ANTHROPIC_API_KEY` | `EnvironmentError` raised before any API call |
 | Outreach email send failure | SMTP error caught; error panel shown, no auto-retry |
 | Missing `GMAIL_USER` or `GMAIL_APP_PASSWORD` | `EnvironmentError` raised before send |

@@ -1,6 +1,113 @@
 # Roadmap — cre-deal-agent
 
-See `docs/PRD.md` for full requirements and data contracts.
+See `docs/PRD.md` for full requirements and data contracts. See `ARCHITECTURE.md` for the full v2 system design.
+
+---
+
+## v2.0 — 6-stage multi-agent pipeline
+
+> **Owner assignment coming soon.** Tasks are listed by role (Person 1–5) as placeholders until the team assigns names.
+
+See `ARCHITECTURE.md` for the full design: state schema, agent map, error path, and data contracts.
+
+---
+
+### Person 1 — finder.py (Stage 2 — Deal Discovery)
+
+**File:** `ai/finder.py`
+
+**What you build:**
+- `finder.search(mandate: dict) -> dict` — takes the mandate object from state and searches for matching deals
+- Returns a match object or a structured null (see `ARCHITECTURE.md` data contracts)
+- Sources: Crexi, Ten-X, internal databases
+
+**Done looks like:** `finder.search()` returns a clean match or a structured no-match dict for the demo scenario. The orchestrator can route on `result["status"]` without any extra parsing.
+
+**Checklist:**
+- [ ] Read mandate object shape from `ARCHITECTURE.md`
+- [ ] Write `finder.search()` — query deal sources against buy box criteria
+- [ ] Return structured null on no match — `status`, `reason`, `criteria_tested`, `markets_searched`
+- [ ] Handle search failures gracefully — never crash the orchestrator
+- [ ] Test against demo scenario (Phoenix-Mesa-Chandler industrial)
+
+---
+
+### Person 2 — sealer.py (Stage 5–6 — LOI + Negotiation)
+
+**File:** `ai/sealer.py`
+
+**What you build:**
+- `sealer.draft_loi(bid: dict) -> dict` — takes the bid object from state and drafts LOI terms
+- `sealer.negotiate(loi_status: dict) -> dict` — handles counter-offer logic; returns updated `loi_status`
+- Hard stop: human approval is required before any LOI is sent
+
+**Done looks like:** `sealer.draft_loi()` produces clean LOI terms from the demo bid. `sealer.negotiate()` handles a counter-offer and updates `loi_status` correctly. Human checkpoint fires before anything leaves the system.
+
+**Checklist:**
+- [ ] Read bid and loi_status field shapes from `ARCHITECTURE.md`
+- [ ] Write `sealer.draft_loi()` — produces LOI terms from bid object
+- [ ] Wire human approval checkpoint before LOI send
+- [ ] Write `sealer.negotiate()` — margin holds → auto-counter, margin gone → auto-withdraw
+- [ ] Test against demo scenario bid
+
+---
+
+### Person 3 — State schema + orchestrator updates (main.py)
+
+**File:** `main.py`
+
+**What you build:**
+- Initialize the full state object at Stage 1 (all 8 fields — see `ARCHITECTURE.md`)
+- Update `main.py` to pass state through all 6 stages in sequence
+- Wire Stage 3 parallel subagent calls (FRED, Census, Tavily fire simultaneously)
+
+**Done looks like:** `main.py` initializes a complete state object, sequences all 6 stages, and passes the correct state slice to each agent at each handoff.
+
+**Checklist:**
+- [ ] Define state object with all 8 fields from `ARCHITECTURE.md`
+- [ ] Update main loop to sequence Stages 1–6
+- [ ] Wire parallel calls for Stage 3 subagents
+- [ ] Confirm each agent receives only the state fields it needs
+
+---
+
+### Person 4 — inspect_state() + park & monitor (main.py)
+
+**File:** `main.py`
+
+**What you build:**
+- `inspect_state(state: dict) -> dict` — reads the error field and identifies which constraint failed
+- Park & monitor loop — retries `finder.py` on schedule, increments `retry_count`
+- Exit conditions: loosen buy box (flag human) or `retry_count ≥ max` (alert human, stop)
+
+**Done looks like:** When `finder.py` returns a no-match, `inspect_state()` correctly identifies the blocking constraint. The retry loop increments `retry_count` and stops cleanly at max without looping forever.
+
+**Checklist:**
+- [ ] Write `inspect_state()` — reads error field, returns diagnosis
+- [ ] Wire park & monitor retry loop with `retry_count` increment
+- [ ] Implement exit conditions — buy box loosen path and max retry path
+- [ ] Test no-match scenario end-to-end
+
+---
+
+### Person 5 — Integration + end-to-end testing
+
+**What you own:**
+- Run the full 6-stage pipeline against the demo scenario
+- Verify all state handoffs are clean — no missing fields, no wrong shapes
+- Confirm human checkpoints fire correctly at Stage 4 and Stage 5–6
+- Confirm park & monitor loop exits cleanly
+
+**Done looks like:** `python main.py` runs the full v2 loop against the Phoenix-Mesa-Chandler demo scenario without errors. All stage transitions produce correct state. Human checkpoints fire. Park & monitor exits cleanly on no-match.
+
+**Checklist:**
+- [ ] Run full loop against demo scenario
+- [ ] Verify state object at each stage transition
+- [ ] Test human checkpoint — approve path and kill path
+- [ ] Test no-match path — park & monitor loop and max retry exit
+- [ ] Confirm `ruff check .` and `bandit` pass on all new files
+
+---
 
 ---
 
