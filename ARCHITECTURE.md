@@ -58,17 +58,24 @@ moment a human accepts terms — that is when the legal clock starts and money m
 
 ```
 outreach_email                        AUTO-SENT   requesting OM, no commitment
-loi_email                             AUTO-SENT   non-binding offer, proposes terms
-counter_offer_email  action="counter" AUTO-SENT   proposes new terms, no commitment
+counter_offer_email  action="counter" AUTO-SENT   proposes new terms, no document needed
 counter_offer_email  action="walk"    AUTO-SENT   withdrawing, no commitment
+loi_email                             HUMAN GATE  email says "LOI is attached" — agent cannot
+                                                  generate or sign that document; human signs,
+                                                  attaches, and sends
 counter_offer_email  action="accept"  HUMAN GATE  accepts seller terms — triggers LOI execution
 ```
+
+The legal boundary is the statute of frauds: real property contracts must be in
+writing and signed by an authorized person. No email alone creates a binding
+obligation in CRE. The LOI document (not the cover email) is what requires a
+signature — that is what stops the agent.
 
 `send_email(email_dict)` in `main.py` uses `smtplib` over Gmail SMTP (port 587,
 STARTTLS). Credentials loaded from `GMAIL_USER` and `GMAIL_APP_PASSWORD` in `.env`.
 Returns `True` on success. On failure, displays error panel and exits without crashing.
 
-For `action="accept"`, the agent displays the draft in the dashboard with a clear
+For human-gate emails, the agent displays the draft in the dashboard with a clear
 warning — human must confirm before anything is sent.
 
 ### Stage 6 — Terminal Output
