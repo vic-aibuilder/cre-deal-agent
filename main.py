@@ -39,9 +39,7 @@ def get_deal_input(demo: bool = False) -> dict:
         console.print("[dim]Demo mode — using preset Phoenix scenario.[/dim]\n")
         table = Table(show_header=False, box=None, padding=(0, 2))
         for key, val in DEMO_DEAL.items():
-            table.add_row(
-                f"[cyan]{key.replace('_', ' ').title()}[/cyan]", str(val)
-            )
+            table.add_row(f"[cyan]{key.replace('_', ' ').title()}[/cyan]", str(val))
         console.print(table)
         console.print()
         return DEMO_DEAL
@@ -51,7 +49,9 @@ def get_deal_input(demo: bool = False) -> dict:
     purchase_price_raw = input("Purchase price in dollars (e.g. 95000000): ").strip()
     cap_rate_raw = input("Cap rate as decimal (e.g. 0.058): ").strip()
     anchor_tenant = input("Anchor tenant (e.g. Amazon): ").strip()
-    tenant_noi_pct_raw = input("Anchor tenant % of NOI as decimal (e.g. 0.65): ").strip()
+    tenant_noi_pct_raw = input(
+        "Anchor tenant % of NOI as decimal (e.g. 0.65): "
+    ).strip()
     lender = input("Lender (e.g. Wells Fargo): ").strip()
     dscr_covenant_raw = input("DSCR covenant (e.g. 1.25): ").strip()
 
@@ -80,9 +80,7 @@ def send_email(email_dict: dict) -> bool:
     gmail_password = os.getenv("GMAIL_APP_PASSWORD")
 
     if not gmail_user or not gmail_password:
-        raise EnvironmentError(
-            "GMAIL_USER and GMAIL_APP_PASSWORD must be set in .env"
-        )
+        raise EnvironmentError("GMAIL_USER and GMAIL_APP_PASSWORD must be set in .env")
 
     msg = MIMEText(email_dict["body"])
     msg["Subject"] = email_dict["subject"]

@@ -14,6 +14,7 @@ from typing import Any
 
 from tavily import TavilyClient
 
+
 def find_offers(submarket: str, asset_type: str, price: float) -> list[dict[str, Any]]:
     """
     Search for competing listings or offers in the market.
@@ -23,7 +24,13 @@ def find_offers(submarket: str, asset_type: str, price: float) -> list[dict[str,
     """
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
-        return [{"name": "Finder Error", "value": "TAVILY_API_KEY not set", "source": "System"}]
+        return [
+            {
+                "name": "Finder Error",
+                "value": "TAVILY_API_KEY not set",
+                "source": "System",
+            }
+        ]
 
     client = TavilyClient(api_key=api_key)
 
@@ -40,26 +47,29 @@ def find_offers(submarket: str, asset_type: str, price: float) -> list[dict[str,
 
     signals = []
     results = response.get("results", [])
-    
+
     for i, res in enumerate(results):
         # Create a condensed summary of the finding
-        title = res.get("title", f"Listing {i+1}")
+        title = res.get("title", f"Listing {i + 1}")
         content = res.get("content", "")[:100] + "..."
         url = res.get("url", "Unknown URL")
         domain = url.split("/")[2] if "//" in url else url
-        
-        signals.append({
-            "name": f"Competing: {title[:30]}",
-            "value": content,
-            "source": domain,
-        })
+
+        signals.append(
+            {
+                "name": f"Competing: {title[:30]}",
+                "value": content,
+                "source": domain,
+            }
+        )
 
     if not signals:
-        signals.append({
-            "name": "Competing Offers",
-            "value": "No direct competing listings found in recent search.",
-            "source": "Tavily"
-        })
+        signals.append(
+            {
+                "name": "Competing Offers",
+                "value": "No direct competing listings found in recent search.",
+                "source": "Tavily",
+            }
+        )
 
     return signals
-

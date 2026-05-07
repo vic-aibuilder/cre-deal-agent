@@ -46,10 +46,11 @@ DEFAULT_BUYER = {
 # COMMON EMAIL GENERATOR
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _generate_email(
     deal_context: dict[str, Any],
     analysis: dict[str, Any],
-    email_type_and_action: dict[str, Any]
+    email_type_and_action: dict[str, Any],
 ) -> tuple[str, bool]:
     """
     Core function that calls Claude using the unified email_generator.txt prompt.
@@ -77,15 +78,15 @@ def _generate_email(
     )
 
     body = response.choices[0].message.content.strip()
-    
+
     # Handle the HUMAN GATE line injected by Claude
     human_gate_warning = "HUMAN GATE — DO NOT AUTO-SEND. DISPLAY FOR HUMAN REVIEW ONLY."
     requires_human_gate = False
-    
+
     if body.startswith(human_gate_warning):
         requires_human_gate = True
         # Strip the warning from the actual email body so it doesn't get sent to the broker
-        body = body[len(human_gate_warning):].lstrip()
+        body = body[len(human_gate_warning) :].lstrip()
 
     return body, requires_human_gate
 
@@ -94,6 +95,7 @@ def _generate_email(
 # DRAFT OUTREACH (Broker Inquiry)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def draft_outreach(deal_context: dict[str, Any]) -> dict[str, Any]:
     """
     Generate broker inquiry email via Claude.
@@ -101,25 +103,27 @@ def draft_outreach(deal_context: dict[str, Any]) -> dict[str, Any]:
 
     Returns: {"subject": str, "body": str, "to": str, "from": str}
     """
-    # In a real app, the analysis wouldn't be fully needed for outreach, but we pass 
+    # In a real app, the analysis wouldn't be fully needed for outreach, but we pass
     # a dummy dict to satisfy the unified prompt requirements
     analysis = {"negotiation_posture": "measured"}
-    
+
     email_type_and_action = {
         "email_type": "outreach_email",
         "action": None,
-        "counter_price": None
+        "counter_price": None,
     }
-    
-    body, requires_human_gate = _generate_email(deal_context, analysis, email_type_and_action)
+
+    body, requires_human_gate = _generate_email(
+        deal_context, analysis, email_type_and_action
+    )
     submarket = deal_context.get("submarket", "Property")
-    
+
     return {
         "subject": f"Inquiry RE: {submarket} {deal_context.get('asset_type', 'Asset')}",
         "body": body,
         "to": deal_context.get("broker_email", "broker@example.com"),
         "from": os.getenv("GMAIL_USER", DEFAULT_BUYER["buyer_contact_email"]),
-        "human_gate": requires_human_gate
+        "human_gate": requires_human_gate,
     }
 
 
@@ -127,10 +131,9 @@ def draft_outreach(deal_context: dict[str, Any]) -> dict[str, Any]:
 # DRAFT LOI COVER
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def draft_loi(
-    deal_context: dict[str, Any], 
-    analysis: dict[str, Any], 
-    loi_terms: dict[str, Any]
+    deal_context: dict[str, Any], analysis: dict[str, Any], loi_terms: dict[str, Any]
 ) -> dict[str, Any]:
     """
     Generate LOI cover email via Claude.
@@ -142,15 +145,17 @@ def draft_loi(
     # We will inject the LOI terms into the analysis dict so the prompt can see them
     analysis_with_terms = analysis.copy()
     offer_price = loi_terms.get("offer_price", analysis.get("bid_floor_usd", 0))
-    
+
     # We pass the offer price as counter_price to satisfy the prompt structure
     email_type_and_action = {
         "email_type": "loi_email",
         "action": None,
-        "counter_price": offer_price
+        "counter_price": offer_price,
     }
-    
-    body, requires_human_gate = _generate_email(deal_context, analysis_with_terms, email_type_and_action)
+
+    body, requires_human_gate = _generate_email(
+        deal_context, analysis_with_terms, email_type_and_action
+    )
     submarket = deal_context.get("submarket", "Property")
 
     return {
@@ -159,7 +164,7 @@ def draft_loi(
         "to": deal_context.get("broker_email", "broker@example.com"),
         "from": os.getenv("GMAIL_USER", DEFAULT_BUYER["buyer_contact_email"]),
         "loi_expiry_hours": loi_terms.get("expiration_hours", 72),
-        "human_gate": requires_human_gate
+        "human_gate": requires_human_gate,
     }
 
 
@@ -167,10 +172,11 @@ def draft_loi(
 # DRAFT COUNTER RESPONSE
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def draft_counter(
-    deal_context: dict[str, Any], 
-    counter_terms: dict[str, Any], 
-    decision: dict[str, Any]
+    deal_context: dict[str, Any],
+    counter_terms: dict[str, Any],
+    decision: dict[str, Any],
 ) -> dict[str, Any]:
     """
     Generate counter-response email via Claude.
@@ -179,28 +185,30 @@ def draft_counter(
     Args:
         decision: from negotiation_agent containing 'action' (accept/counter/walk),
                   'new_terms', and 'reason'.
-                  
+
     Returns: {"subject": str, "body": str, "to": str, "from": str, "action": str}
     """
     # The decision might not have an analysis dict attached natively, so we create a mock one
     # if it's missing, mostly to pass the negotiation posture
     analysis = decision.get("analysis", {"negotiation_posture": "measured"})
     action = decision.get("action", "walk")
-    
+
     email_type_and_action = {
         "email_type": "counter_offer_email",
         "action": action,
-        "counter_price": counter_terms.get("price", 0)
+        "counter_price": counter_terms.get("price", 0),
     }
-    
+
     # If we are countering, inject the new_offer_price into the analysis context for the prompt
     if action == "counter":
         new_terms = decision.get("new_terms", {}) or {}
         analysis["new_offer_price"] = new_terms.get("offer_price", 0)
-    
-    body, requires_human_gate = _generate_email(deal_context, analysis, email_type_and_action)
+
+    body, requires_human_gate = _generate_email(
+        deal_context, analysis, email_type_and_action
+    )
     submarket = deal_context.get("submarket", "Property")
-    
+
     subject_prefix = "RE: "
     if action == "accept":
         subject_prefix = "Offer Accepted — "
@@ -215,5 +223,5 @@ def draft_counter(
         "to": deal_context.get("broker_email", "broker@example.com"),
         "from": os.getenv("GMAIL_USER", DEFAULT_BUYER["buyer_contact_email"]),
         "action": action,
-        "human_gate": requires_human_gate
+        "human_gate": requires_human_gate,
     }
