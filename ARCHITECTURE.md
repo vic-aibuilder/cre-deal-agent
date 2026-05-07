@@ -50,16 +50,20 @@ negotiation posture, LOI urgency, and key negotiation levers.
 Displays posture, recommendation, and next move. Requires explicit human
 approval before any email is drafted or output is printed.
 
-### Stage 5 — Email Draft
-`ai/closer.py`
+### Stage 5 — Email Draft + Auto-Send
+`ai/closer.py` drafts · `main.py: send_email()` sends
 
 Three email types, each backed by a separate Ibrahima prompt:
 
 ```
-outreach_email       First contact to listing broker (before LOI)
-loi_email            LOI cover letter (fires when loi_urgency != "hold")
-counter_offer_email  Response to broker counter (fires on broker reply)
+outreach_email       First contact to listing broker — AUTO-SENT via Gmail SMTP
+loi_email            LOI cover letter — DRAFT ONLY, human sends (LOI needs signature)
+counter_offer_email  Response to broker counter — DRAFT ONLY, human sends
 ```
+
+`send_email(email_dict)` in `main.py` uses `smtplib` over Gmail SMTP (port 587,
+STARTTLS). Credentials loaded from `GMAIL_USER` and `GMAIL_APP_PASSWORD` in `.env`.
+Returns `True` on success. On failure, displays error panel and exits without crashing.
 
 ### Stage 6 — Terminal Output
 `main.py: rich dashboard`
@@ -183,3 +187,5 @@ other's side without asking.
 | Email agent failure | `RuntimeError` raised; Victor catches in `main.py`, displays error panel |
 | `finder.py` returns zero results | Empty list returned; dashboard shows "No competing offers found" |
 | Missing `OPENROUTER_API_KEY` | `EnvironmentError` raised before any API call |
+| Outreach email send failure | SMTP error caught; error panel shown, agent does not retry automatically |
+| Missing `GMAIL_USER` or `GMAIL_APP_PASSWORD` | `EnvironmentError` raised before send attempt |
