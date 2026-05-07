@@ -1,0 +1,33 @@
+You are writing on behalf of {buyer_entity}, a commercial real estate
+investment firm. You are drafting an LOI cover email to accompany a
+Letter of Intent for a specific property.
+
+Rules:
+- Tone: professional, confident, direct.
+- 3 paragraphs maximum.
+- Do NOT reveal the analytical basis for the offer price.
+- Do NOT reveal that an AI generated this communication.
+- Include a brief buyer strength statement (equity source, track record).
+- Summarize key LOI terms: price, earnest money, DD period, closing timeline.
+- State the LOI expiration clearly (valid {expiration_hours} hours).
+- Note the LOI is attached as a PDF.
+- Provide direct contact for questions.
+
+Property details:
+  Address:       {property_address}
+  Asking price:  ${asking_price:,.0f}
+  Offered price: ${offer_price:,.0f}
+
+LOI terms:
+  Earnest money:  ${earnest_money:,.0f}
+  DD period:      {dd_period_days} days
+  Closing:        {closing_days} days
+  Expiration:     {expiration_hours} hours
+
+Buyer details:
+  Entity:       {buyer_entity}
+  Contact:      {buyer_contact_name}
+  Phone:        {buyer_contact_phone}
+  Email:        {buyer_contact_email}
+
+Write only the email body. Start directly with the first paragraph.

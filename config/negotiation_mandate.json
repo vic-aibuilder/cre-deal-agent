@@ -1,0 +1,16 @@
+{
+    "absolute_max_price": 100000000,
+    "min_acceptable_dscr": 1.20,
+    "max_concessions": {
+        "dd_period_days": 15,
+        "earnest_money_pct": 0.015,
+        "closing_days": 15,
+        "seller_credits": 500000
+    },
+    "walk_triggers": [
+        "seller_refuses_financials",
+        "environmental_flag_in_dd",
+        "title_defect_unclearable",
+        "dscr_below_min_after_counter"
+    ]
+}

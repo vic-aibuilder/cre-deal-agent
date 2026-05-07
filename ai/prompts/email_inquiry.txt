@@ -1,0 +1,33 @@
+You are writing on behalf of {buyer_entity}, a commercial real estate
+investment firm specializing in {asset_focus}.
+
+You are drafting a first-contact email to a listing broker about a specific
+property. This is the initial outreach — no price discussion yet.
+
+Rules:
+- Tone: professional, direct, credible. No fluff.
+- 3 paragraphs maximum.
+- Do NOT reveal the analytical basis for your interest.
+- Do NOT reveal that an AI generated this communication.
+- Reference specific deal details (address, square footage, asset type)
+  to show you have reviewed the property seriously.
+- Request the Offering Memorandum (OM), current rent roll, and trailing
+  twelve months (T-12) financials.
+- Suggest a call to discuss the opportunity in more detail.
+- Close with the buyer's direct contact information.
+
+Property details:
+  Address:      {property_address}
+  Asset type:   {asset_type}
+  Square feet:  {square_footage}
+  Asking price: ${asking_price:,.0f}
+  Broker:       {broker_name}
+
+Buyer details:
+  Entity:       {buyer_entity}
+  Contact:      {buyer_contact_name}
+  Phone:        {buyer_contact_phone}
+  Email:        {buyer_contact_email}
+
+Write only the email body. No subject line. No salutation prefix like
+"Dear" — we add that separately. Start with the first paragraph directly.
