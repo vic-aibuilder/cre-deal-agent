@@ -53,17 +53,23 @@ approval before any email is drafted or output is printed.
 ### Stage 5 — Email Draft + Auto-Send
 `ai/closer.py` drafts · `main.py: send_email()` sends
 
-Three email types, each backed by a separate Ibrahima prompt:
+The agent auto-sends everything that proposes or withdraws. It stops at the
+moment a human accepts terms — that is when the legal clock starts and money moves.
 
 ```
-outreach_email       First contact to listing broker — AUTO-SENT via Gmail SMTP
-loi_email            LOI cover letter — DRAFT ONLY, human sends (LOI needs signature)
-counter_offer_email  Response to broker counter — DRAFT ONLY, human sends
+outreach_email                        AUTO-SENT   requesting OM, no commitment
+loi_email                             AUTO-SENT   non-binding offer, proposes terms
+counter_offer_email  action="counter" AUTO-SENT   proposes new terms, no commitment
+counter_offer_email  action="walk"    AUTO-SENT   withdrawing, no commitment
+counter_offer_email  action="accept"  HUMAN GATE  accepts seller terms — triggers LOI execution
 ```
 
 `send_email(email_dict)` in `main.py` uses `smtplib` over Gmail SMTP (port 587,
 STARTTLS). Credentials loaded from `GMAIL_USER` and `GMAIL_APP_PASSWORD` in `.env`.
 Returns `True` on success. On failure, displays error panel and exits without crashing.
+
+For `action="accept"`, the agent displays the draft in the dashboard with a clear
+warning — human must confirm before anything is sent.
 
 ### Stage 6 — Terminal Output
 `main.py: rich dashboard`

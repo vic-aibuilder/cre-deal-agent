@@ -380,7 +380,8 @@ offer_signals  = f_finder.result()
 - [ ] Parallelize four fetcher calls with `ThreadPoolExecutor`
 - [ ] Wire `finder.find_offers()` into the main loop
 - [ ] Wire `closer.draft_loi_email()` — fires when `loi_urgency != "hold"`
-- [ ] Wire `closer.draft_outreach_email()` + `send_email()` — outreach auto-sends after checkpoint
+- [ ] Wire `send_email()` for auto-send emails — outreach, LOI cover, counter (counter + walk)
+- [ ] Wire human gate for `action="accept"` — display draft with warning, do not auto-send
 - [ ] Write `send_email(email_dict: dict) -> bool` — Gmail SMTP, port 587, STARTTLS
 - [ ] Add `GMAIL_USER` and `GMAIL_APP_PASSWORD` to `.env.example`
 - [ ] Add `rich` to `requirements.txt`
