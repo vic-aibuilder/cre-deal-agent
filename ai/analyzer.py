@@ -35,7 +35,7 @@ from dotenv import load_dotenv
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(_PROJECT_ROOT / ".env")
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DEAL BRIEF TYPE
@@ -209,25 +209,20 @@ def analyze_deal(
 
     Raises:
         RuntimeError — if Claude fails to return a valid brief after retry
-        EnvironmentError — if OPENROUTER_API_KEY is not set
+        EnvironmentError — if ANTHROPIC_API_KEY is not set
     """
-    if not OPENROUTER_API_KEY:
-        raise EnvironmentError("OPENROUTER_API_KEY is not set. Check your .env file.")
+    if not ANTHROPIC_API_KEY:
+        raise EnvironmentError("ANTHROPIC_API_KEY is not set. Check your .env file.")
 
-    import litellm
+    import anthropic
 
-    # LiteLLM reads OPENROUTER_API_KEY from env automatically
-    # when using the openrouter/ model prefix.
-    os.environ["OPENROUTER_API_KEY"] = OPENROUTER_API_KEY
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     user_prompt = _build_user_prompt(
         deal_context, fred_signals, census_signals, tavily_signals
     )
 
-    # ── v1: OpenRouter auto router via LiteLLM ───────────────────────────
-    # v2 swap: change model to "openrouter/anthropic/claude-opus-4-5"
-    # No other changes needed — same interface.
-    model_id = "openrouter/openrouter/auto"
+    model_id = "claude-sonnet-4-6"
 
     # ── Retry loop: handles rate limits, content filters, empty responses ─
     max_retries = 3
@@ -264,14 +259,15 @@ def analyze_deal(
                 ]
                 temperature = 0.2
 
-            response = litellm.completion(
+            response = client.messages.create(
                 model=model_id,
-                messages=messages,
                 max_tokens=2048,
                 temperature=temperature,
+                system=SYSTEM_PROMPT,
+                messages=[m for m in messages if m["role"] != "system"],
             )
 
-            raw = response.choices[0].message.content
+            raw = response.content[0].text
             return _parse_brief(raw)
 
         except ValueError as e:
