@@ -10,12 +10,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from fetchers import census, fred, tavily
-from ai import analyzer
-
-# Swap these stubs for real imports when Joel delivers finder.py and closer.py
-# from fetchers import finder
-# from ai import closer
+from fetchers import census, fred, tavily, finder
+from ai import analyzer, closer
 
 load_dotenv()
 
@@ -31,48 +27,6 @@ DEMO_DEAL = {
     "lender": "Wells Fargo",
     "dscr_covenant": 1.25,
 }
-
-
-# ── Stubs — remove when Joel delivers ────────────────────────────────────────
-
-
-def _stub_find_offers(
-    location: str, asset_type: str, price: float
-) -> list[dict]:
-    return []
-
-
-def _stub_draft_outreach(deal_context: dict) -> dict:
-    return {
-        "subject": f"[STUB] Interest — {deal_context.get('submarket')} Industrial",
-        "body": "Stub outreach body — closer.py not wired yet.",
-        "to": "broker@example.com",
-        "from": os.getenv("GMAIL_USER", ""),
-    }
-
-
-def _stub_draft_loi(
-    deal_context: dict, analysis: dict, loi_terms: dict
-) -> dict:
-    return {
-        "subject": f"[STUB] Letter of Intent — {deal_context.get('submarket')} Industrial",
-        "body": "Stub LOI body — closer.py not wired yet.",
-        "to": "broker@example.com",
-        "from": os.getenv("GMAIL_USER", ""),
-        "loi_expiry_hours": 72,
-    }
-
-
-def _stub_draft_counter(
-    deal_context: dict, counter_terms: dict, decision: dict
-) -> dict:
-    return {
-        "subject": f"[STUB] Counter — {deal_context.get('submarket')} Industrial",
-        "body": "Stub counter body — closer.py not wired yet.",
-        "to": "broker@example.com",
-        "from": os.getenv("GMAIL_USER", ""),
-        "action": decision.get("action", "counter"),
-    }
 
 
 # ── Deal input ────────────────────────────────────────────────────────────────
@@ -210,7 +164,7 @@ def main() -> None:
         "FRED": (fred.fetch, (submarket,)),
         "Census": (census.fetch, (submarket,)),
         "Tavily": (tavily.fetch, (submarket, asset_type)),
-        "Finder": (_stub_find_offers, (submarket, asset_type, price)),
+        "Finder": (finder.find_offers, (submarket, asset_type, price)),
     }
 
     console.print("\n[bold]Fetching market signals...[/bold]")
@@ -262,7 +216,7 @@ def main() -> None:
 
     if loi_urgency in ("submit_within_24h", "submit_within_72h"):
         # LOI cover — human gate (needs signed document attached)
-        email = _stub_draft_loi(deal_context, analysis, {})
+        email = closer.draft_loi(deal_context, analysis, {})
         if _human_gate(email):
             sent = send_email(email)
             console.print(_email_panel(email, sent=sent))
@@ -271,7 +225,7 @@ def main() -> None:
             sys.exit(0)
     else:
         # Outreach — auto-send, no gate
-        email = _stub_draft_outreach(deal_context)
+        email = closer.draft_outreach(deal_context)
         console.print("\n[bold]Sending outreach email...[/bold]")
         sent = send_email(email)
         console.print(_email_panel(email, sent=sent))
