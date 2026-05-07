@@ -12,12 +12,12 @@ BASE = "https://api.stlouisfed.org/fred/series/observations"
 # Scope tag flows into the `source` string so the analyzer can widen sensitivity
 # on non-direct data (V2 deliverable 3, flag-only — no fallback fetching).
 SERIES = {
-    "30-Year Fixed Mortgage Rate":   ("MORTGAGE30US", "national"),
-    "federal funds rate":            ("FEDFUNDS",     "national"),
-    "10-Year Treasury Yield":        ("DGS10",        "national"),
-    "Arizona Unemployment Rate":     ("AZUR",         "state-level"),
-    "National Construction Spending": ("TTLCONS",     "national"),
-    "industrial production index":   ("INDPRO",       "national"),
+    "30-Year Fixed Mortgage Rate": ("MORTGAGE30US", "national"),
+    "federal funds rate": ("FEDFUNDS", "national"),
+    "10-Year Treasury Yield": ("DGS10", "national"),
+    "Arizona Unemployment Rate": ("AZUR", "state-level"),
+    "National Construction Spending": ("TTLCONS", "national"),
+    "industrial production index": ("INDPRO", "national"),
 }
 
 
@@ -56,9 +56,7 @@ def fetch(submarket: str) -> list[dict]:
                 }
             )
         else:
-            signals.append(
-                {"name": name, "value": value, "source": f"FRED ({scope})"}
-            )
+            signals.append({"name": name, "value": value, "source": f"FRED ({scope})"})
     return signals
 
 
