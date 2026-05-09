@@ -129,11 +129,11 @@ def generate(deal_context: dict[str, Any], analysis: dict[str, Any], offer_price
         pdf.set_xy(x, sig_y + 24)
         pdf.cell(75, 6, f"Name: {name}")
         pdf.set_xy(x, sig_y + 31)
-        pdf.cell(75, 6, f"Title: Authorized Signatory")
+        pdf.cell(75, 6, "Title: Authorized Signatory")
         pdf.set_xy(x, sig_y + 38)
         pdf.cell(75, 6, f"Entity: {entity}")
         pdf.set_xy(x, sig_y + 45)
-        pdf.cell(75, 6, f"Date: _______________________")
+        pdf.cell(75, 6, "Date: _______________________")
 
     sig_block(left_x, "BUYER", buyer["contact"], buyer["entity"])
     sig_block(right_x, "SELLER / BROKER", "________________________", "________________________")
