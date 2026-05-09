@@ -14,10 +14,9 @@ import os
 from pathlib import Path
 from typing import Any
 
-import litellm
+import anthropic
 
-# Use Anthropic direct for reliable JSON and precise tone
-MODEL_ID = "anthropic/claude-sonnet-4-20250514"
+MODEL_ID = "claude-sonnet-4-6"
 
 _PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
 
@@ -70,14 +69,14 @@ def _generate_email(
         buyer_contact_email=buyer["buyer_contact_email"],
     )
 
-    response = litellm.completion(
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    response = client.messages.create(
         model=MODEL_ID,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4,
         max_tokens=800,
+        messages=[{"role": "user", "content": prompt}],
     )
 
-    body = response.choices[0].message.content.strip()
+    body = response.content[0].text.strip()
 
     # Handle the HUMAN GATE line injected by Claude
     human_gate_warning = "HUMAN GATE — DO NOT AUTO-SEND. DISPLAY FOR HUMAN REVIEW ONLY."
@@ -144,7 +143,11 @@ def draft_loi(
     # The new prompt doesn't explicitly take loi_terms, it uses deal_brief (analysis)
     # We will inject the LOI terms into the analysis dict so the prompt can see them
     analysis_with_terms = analysis.copy()
-    offer_price = loi_terms.get("offer_price", analysis.get("bid_floor_usd", 0))
+    offer_price = (
+        loi_terms.get("offer_price")
+        or analysis.get("bid_floor_usd")
+        or deal_context.get("purchase_price", 0)
+    )
 
     # We pass the offer price as counter_price to satisfy the prompt structure
     email_type_and_action = {
