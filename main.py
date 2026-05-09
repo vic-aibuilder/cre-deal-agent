@@ -1,8 +1,9 @@
 import argparse
 import os
 import smtplib
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from dotenv import load_dotenv
@@ -11,7 +12,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from fetchers import census, fred, tavily, finder
-from ai import analyzer, closer
+from ai import analyzer, closer, loi_pdf
 
 load_dotenv()
 
@@ -75,14 +76,22 @@ def get_deal_input(demo: bool = False) -> dict:
 # ── Email sender ──────────────────────────────────────────────────────────────
 
 
-def send_email(email_dict: dict) -> bool:
+def send_email(email_dict: dict, attachment: bytes | None = None, attachment_name: str = "LOI.pdf") -> bool:
     gmail_user = os.getenv("GMAIL_USER")
     gmail_password = os.getenv("GMAIL_APP_PASSWORD")
 
     if not gmail_user or not gmail_password:
         raise EnvironmentError("GMAIL_USER and GMAIL_APP_PASSWORD must be set in .env")
 
-    msg = MIMEText(email_dict["body"])
+    if attachment:
+        msg = MIMEMultipart()
+        msg.attach(MIMEText(email_dict["body"]))
+        part = MIMEApplication(attachment, Name=attachment_name)
+        part["Content-Disposition"] = f'attachment; filename="{attachment_name}"'
+        msg.attach(part)
+    else:
+        msg = MIMEText(email_dict["body"])
+
     msg["Subject"] = email_dict["subject"]
     msg["From"] = email_dict.get("from") or gmail_user
     msg["To"] = email_dict["to"]
@@ -123,19 +132,6 @@ def _email_panel(email_dict: dict, sent: bool = False) -> Panel:
     )
     return Panel(body, title=f"EMAIL — {status}")
 
-
-def _human_gate(email_dict: dict) -> bool:
-    console.print(_email_panel(email_dict, sent=False))
-    console.print(
-        "\n[bold yellow]This email requires your review before sending.[/bold yellow]"
-    )
-    while True:
-        answer = input("Send? (yes/no): ").strip().lower()
-        if answer == "yes":
-            return True
-        if answer == "no":
-            return False
-        console.print("Please enter yes or no.")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -208,25 +204,14 @@ def main() -> None:
         else Panel("[dim]No competing offers found.[/dim]", title="COMPETING OFFERS")
     )
 
-    # ── Stage 4: Email + send ─────────────────────────────────────────────────
+    # ── Stage 4: LOI — generate PDF, auto-send, signature required by parties ─
 
-    loi_urgency = analysis.get("loi_urgency", "hold")
-
-    if loi_urgency in ("submit_within_24h", "submit_within_72h"):
-        # LOI cover — human gate (needs signed document attached)
-        email = closer.draft_loi(deal_context, analysis, {})
-        if _human_gate(email):
-            sent = send_email(email)
-            console.print(_email_panel(email, sent=sent))
-        else:
-            console.print("\n[dim]LOI email cancelled.[/dim]")
-            sys.exit(0)
-    else:
-        # Outreach — auto-send, no gate
-        email = closer.draft_outreach(deal_context)
-        console.print("\n[bold]Sending outreach email...[/bold]")
-        sent = send_email(email)
-        console.print(_email_panel(email, sent=sent))
+    email = closer.draft_loi(deal_context, analysis, {})
+    offer_price = analysis.get("bid_floor_usd") or deal_context.get("purchase_price", 0)
+    pdf_bytes = loi_pdf.generate(deal_context, analysis, offer_price)
+    console.print("\n[bold]Sending LOI email with PDF attachment...[/bold]")
+    sent = send_email(email, attachment=pdf_bytes, attachment_name="Letter_of_Intent.pdf")
+    console.print(_email_panel(email, sent=sent))
 
 
 if __name__ == "__main__":
