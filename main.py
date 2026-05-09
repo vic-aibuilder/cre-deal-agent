@@ -76,7 +76,9 @@ def get_deal_input(demo: bool = False) -> dict:
 # ── Email sender ──────────────────────────────────────────────────────────────
 
 
-def send_email(email_dict: dict, attachment: bytes | None = None, attachment_name: str = "LOI.pdf") -> bool:
+def send_email(
+    email_dict: dict, attachment: bytes | None = None, attachment_name: str = "LOI.pdf"
+) -> bool:
     gmail_user = os.getenv("GMAIL_USER")
     gmail_password = os.getenv("GMAIL_APP_PASSWORD")
 
@@ -131,7 +133,6 @@ def _email_panel(email_dict: dict, sent: bool = False) -> Panel:
         f"{email_dict.get('body', '')}"
     )
     return Panel(body, title=f"EMAIL — {status}")
-
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -210,7 +211,9 @@ def main() -> None:
     offer_price = analysis.get("bid_floor_usd") or deal_context.get("purchase_price", 0)
     pdf_bytes = loi_pdf.generate(deal_context, analysis, offer_price)
     console.print("\n[bold]Sending LOI email with PDF attachment...[/bold]")
-    sent = send_email(email, attachment=pdf_bytes, attachment_name="Letter_of_Intent.pdf")
+    sent = send_email(
+        email, attachment=pdf_bytes, attachment_name="Letter_of_Intent.pdf"
+    )
     console.print(_email_panel(email, sent=sent))
 
 

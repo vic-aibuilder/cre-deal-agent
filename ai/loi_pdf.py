@@ -11,7 +11,9 @@ from typing import Any
 from fpdf import FPDF
 
 
-def generate(deal_context: dict[str, Any], analysis: dict[str, Any], offer_price: int) -> bytes:
+def generate(
+    deal_context: dict[str, Any], analysis: dict[str, Any], offer_price: int
+) -> bytes:
     buyer = {
         "entity": "Mesa Capital Partners LLC",
         "contact": "Joel Martinez",
@@ -34,7 +36,14 @@ def generate(deal_context: dict[str, Any], analysis: dict[str, Any], offer_price
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "LETTER OF INTENT", align="C", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 6, "Non-Binding - For Discussion Purposes Only", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0,
+        6,
+        "Non-Binding - For Discussion Purposes Only",
+        align="C",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
     pdf.ln(4)
     pdf.set_draw_color(0, 0, 0)
     pdf.set_line_width(0.5)
@@ -43,7 +52,9 @@ def generate(deal_context: dict[str, Any], analysis: dict[str, Any], offer_price
 
     # ── Date + Parties ────────────────────────────────────────────────────────
     pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 6, f"Date: {today.strftime('%B %d, %Y')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0, 6, f"Date: {today.strftime('%B %d, %Y')}", new_x="LMARGIN", new_y="NEXT"
+    )
     pdf.ln(2)
 
     pdf.set_font("Helvetica", "B", 10)
@@ -51,15 +62,39 @@ def generate(deal_context: dict[str, Any], analysis: dict[str, Any], offer_price
     pdf.set_font("Helvetica", "", 10)
     pdf.cell(0, 6, buyer["entity"], new_x="LMARGIN", new_y="NEXT")
     pdf.cell(0, 6, f"Attn: {buyer['contact']}", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 6, f"Phone: {buyer['phone']}  |  Email: {buyer['email']}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0,
+        6,
+        f"Phone: {buyer['phone']}  |  Email: {buyer['email']}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
     pdf.ln(4)
 
     pdf.set_font("Helvetica", "B", 10)
     pdf.cell(0, 6, "PROPERTY", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 6, f"Asset Type:  {deal_context.get('asset_type', 'N/A')}", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 6, f"Submarket:   {deal_context.get('submarket', 'N/A')}", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 6, f"Anchor Tenant: {deal_context.get('anchor_tenant', 'N/A')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0,
+        6,
+        f"Asset Type:  {deal_context.get('asset_type', 'N/A')}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.cell(
+        0,
+        6,
+        f"Submarket:   {deal_context.get('submarket', 'N/A')}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.cell(
+        0,
+        6,
+        f"Anchor Tenant: {deal_context.get('anchor_tenant', 'N/A')}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
     pdf.ln(6)
 
     # ── Terms ─────────────────────────────────────────────────────────────────
@@ -75,11 +110,16 @@ def generate(deal_context: dict[str, Any], analysis: dict[str, Any], offer_price
         pdf.cell(0, 7, value, new_x="LMARGIN", new_y="NEXT")
 
     term_row("Purchase Price:", f"${offer_price:,.0f}")
-    term_row("Earnest Money Deposit:", f"${earnest:,.0f}  (1% of purchase price, hard at signing)")
+    term_row(
+        "Earnest Money Deposit:",
+        f"${earnest:,.0f}  (1% of purchase price, hard at signing)",
+    )
     term_row("Due Diligence Period:", f"{dd_days} days from execution")
     term_row("Closing:", f"{closing_days} days from execution")
     term_row("Financing Contingency:", "None - all-equity acquisition")
-    term_row("LOI Expiration:", expiry.strftime("%B %d, %Y") + "  (72 hours from date above)")
+    term_row(
+        "LOI Expiration:", expiry.strftime("%B %d, %Y") + "  (72 hours from date above)"
+    )
     pdf.ln(6)
 
     # ── Conditions ────────────────────────────────────────────────────────────
@@ -136,6 +176,11 @@ def generate(deal_context: dict[str, Any], analysis: dict[str, Any], offer_price
         pdf.cell(75, 6, "Date: _______________________")
 
     sig_block(left_x, "BUYER", buyer["contact"], buyer["entity"])
-    sig_block(right_x, "SELLER / BROKER", "________________________", "________________________")
+    sig_block(
+        right_x,
+        "SELLER / BROKER",
+        "________________________",
+        "________________________",
+    )
 
     return bytes(pdf.output())
