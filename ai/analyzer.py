@@ -39,7 +39,6 @@ from typing import Any
 from pathlib import Path
 
 from dotenv import load_dotenv
-from ui.terminal import format_brief_for_terminal  # noqa: F401  # re-export for backward compat
 
 # Resolve .env relative to this file's parent (project root: cre-deal-agent/)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -61,7 +60,7 @@ DealBrief = dict[str, Any]
 # iterate without touching Python code. Falls back to inline if missing.
 # ─────────────────────────────────────────────────────────────────────────────
 
-_PROMPT_FILE = Path(__file__).resolve().parent / "prompts" / "analysis.txt"
+_PROMPT_FILE = Path(__file__).resolve().parent / "prompts" / "analysis_system.txt"
 
 
 def _load_system_prompt() -> str:
